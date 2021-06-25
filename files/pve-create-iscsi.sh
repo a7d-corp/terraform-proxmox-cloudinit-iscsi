@@ -44,6 +44,7 @@ validate_vars() {
 
 create_lvm() {
     # create lvm
+    echo "[INFO] running: lvcreate -V ${LVM_SIZE} --thin -n ${LVM_NAME} ${LVM_POOL}"
     if ! lvcreate -V ${LVM_SIZE} --thin -n ${LVM_NAME} ${LVM_POOL}; then
 	echo "lvm creation failed"
 	exit 1
@@ -51,6 +52,7 @@ create_lvm() {
 }
 
 destroy_lvm() {
+    echo "[INFO] running: lvremove -fy /dev/mapper/${VG_NAME}-${LVM_NAME}"
     if ! lvremove -fy /dev/mapper/${VG_NAME}-${LVM_NAME}; then
 	echo "lvm volume '/dev/mapper/${VG_NAME}-${LVM_NAME}' not removed"
 	exit 1
@@ -59,6 +61,7 @@ destroy_lvm() {
 
 create_iscsi_target() {
     # create iscsi target definition
+    echo "[INFO] creating: /etc/tgt/conf.d/${LVM_NAME}.conf"
     cat > /etc/tgt/conf.d/${LVM_NAME}.conf <<EOF
 <target ${IQN}:${LVM_NAME}>
 	backing-store /dev/mapper/${VG_NAME}-${LVM_NAME}
@@ -74,6 +77,7 @@ EOF
 
 destroy_iscsi_target() {
     # remove iscsi target definition
+    echo "[INFO] running: rm -f /etc/tgt/conf.d/${LVM_NAME}.conf"
     if ! rm -f /etc/tgt/conf.d/${LVM_NAME}.conf; then
 	echo "iscsi target file '${LVM_NAME}.conf' was not removed"
 	exit 1
@@ -86,6 +90,7 @@ disconnect_iscsi_clients() {
 
     # loop over all node IPs and disconnect from the iscsi target
     for node in "${proxmox_nodes[@]}"; do
+	echo "[INFO] running: ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${IQN}:${LVM_NAME} -p ${ISCSI_HOST}:${ISCSI_PORT} -u"
 	if ! ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${IQN}:${LVM_NAME} -p ${ISCSI_HOST}:${ISCSI_PORT} -u; then
 	    echo "couldn't disconnect ${node} from ${IQN}:${LVM_NAME}"
 	    exit 1
@@ -95,6 +100,7 @@ disconnect_iscsi_clients() {
 
 create_pve_storage() {
     # create storage in PVE
+    echo "[INFO] running: pvesm add iscsi ${LVM_NAME} -portal ${ISCSI_HOST}:${ISCSI_PORT} --target ${IQN}:${LVM_NAME}"
     if ! pvesm add iscsi ${LVM_NAME} -portal ${ISCSI_HOST}:${ISCSI_PORT} --target ${IQN}:${LVM_NAME}; then
 	echo "couldn't add storage '${LVM_NAME}' to PVE"
 	exit 1
@@ -103,6 +109,7 @@ create_pve_storage() {
 
 destroy_pve_storage() {
     # delete storage from PVE
+    echo "[INFO] running: pvesm remove ${LVM_NAME}"
     if ! pvesm remove "${LVM_NAME}" ; then
 	echo "couldn't remove storage '${LVM_NAME}' from PVE"
 	exit 1
@@ -111,6 +118,7 @@ destroy_pve_storage() {
 
 reload_tgt() {
     # reload tgt daemon
+    echo "[INFO] running: /usr/sbin/tgt-admin --update ALL -c /etc/tgt/targets.conf"
     if ! /usr/sbin/tgt-admin --update ALL -c /etc/tgt/targets.conf; then
 	echo "couldn't reload tgt"
 	exit 1
@@ -135,6 +143,5 @@ main() {
 	destroy_lvm
     fi
 }
-
 # run main function
 main
