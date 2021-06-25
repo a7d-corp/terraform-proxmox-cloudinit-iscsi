@@ -12,8 +12,8 @@ resource "null_resource" "cloudinit_iscsi_drive" {
   }
 
   provisioner "file" {
-    content      = "#!/bin/bash\ndeclare -a proxmox_nodes=(${var.proxmox_node_ips})",
-    destination = "/tmp/pve-nodes.sh",
+    content     = "#!/bin/bash\ndeclare -a proxmox_nodes=(${var.proxmox_node_ips})"
+    destination = "/tmp/pve-nodes.sh"
   }
 
   provisioner "remote-exec" {
