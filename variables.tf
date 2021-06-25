@@ -9,11 +9,6 @@ variable "connection_user" {
   type        = string
 }
 
-variable "connection_password" {
-  description = "SSH user password of the storage server."
-  type        = string
-}
-
 variable "connection_host" {
   description = "Hostname of the storage server to connect to (likely to be the same as iscsi_host)."
   type        = string

@@ -5,10 +5,10 @@ locals {
 
 resource "null_resource" "cloudinit_iscsi_drive" {
   connection {
-    type     = var.connection_type
-    user     = var.connection_user
-    password = var.connection_password
-    host     = var.connection_host
+    type  = var.connection_type
+    user  = var.connection_user
+    host  = var.connection_host
+    agent = true
   }
 
   provisioner "file" {
@@ -33,19 +33,18 @@ resource "null_resource" "cloudinit_iscsi_drive_destroy_only" {
   # dirty hack to work around destroy-time provisioners being
   # unable to access variables easily.
   triggers = {
-    destroy_string      = local.destroy_string
-    connection_type     = var.connection_type
-    connection_user     = var.connection_user
-    connection_password = var.connection_password
-    connection_host     = var.connection_host
+    destroy_string  = local.destroy_string
+    connection_type = var.connection_type
+    connection_user = var.connection_user
+    connection_host = var.connection_host
   }
 
   provisioner "file" {
     connection {
-      type     = var.connection_type
-      user     = var.connection_user
-      password = var.connection_password
-      host     = var.connection_host
+      type  = var.connection_type
+      user  = var.connection_user
+      host  = var.connection_host
+      agent = true
     }
     content     = "#!/bin/bash\ndeclare -a proxmox_nodes=(${var.proxmox_node_ips})"
     destination = "/tmp/pve-nodes.sh"
@@ -53,10 +52,10 @@ resource "null_resource" "cloudinit_iscsi_drive_destroy_only" {
 
   provisioner "remote-exec" {
     connection {
-      type     = self.triggers.connection_type
-      user     = self.triggers.connection_user
-      password = self.triggers.connection_password
-      host     = self.triggers.connection_host
+      type  = self.triggers.connection_type
+      user  = self.triggers.connection_user
+      host  = self.triggers.connection_host
+      agent = true
     }
     when = destroy
     inline = [
