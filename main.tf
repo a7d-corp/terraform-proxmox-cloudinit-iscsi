@@ -28,10 +28,10 @@ resource "null_resource" "cloudinit_iscsi_drive" {
   }
 
   provisioner "remote-exec" {
-    when   = destroy
+    when = destroy
     inline = [
       "chmod +x /tmp/pve-create-iscsi.sh",
-      "/tmp/pve-create-iscsi.sh destroy ${var.iscsi_host} ${var.iscsi_port} ${var.iqn} ${var.lvm_pool} ${var.lvm_name},
+      "/tmp/pve-create-iscsi.sh destroy ${var.iscsi_host} ${var.iscsi_port} ${var.iqn} ${var.lvm_pool} ${var.lvm_name}",
     ]
   }
 }
