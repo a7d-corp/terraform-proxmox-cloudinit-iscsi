@@ -49,3 +49,8 @@ variable "lvm_size" {
   description = "Size of the LVM volume. Must include the unit (i.e. 50G for a 50Gb volume)."
   type        = string
 }
+
+variable "vmid" {
+  description = "ID of the VM."
+  type        = number
+}
