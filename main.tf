@@ -54,6 +54,7 @@ resource "null_resource" "cloudinit_iscsi_drive_destroy_only" {
     when = destroy
     inline = [
       "${self.triggers.script_path}/${self.triggers.script_name_stub}-${self.triggers.vmid}.sh destroy",
+      "rm -f ${self.triggers.script_path}/${self.triggers.script_name_stub}-${self.triggers.vmid}.sh",
     ]
   }
 }
