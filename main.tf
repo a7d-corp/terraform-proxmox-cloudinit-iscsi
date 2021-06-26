@@ -1,19 +1,14 @@
 locals {
-  create_string  = "${var.iscsi_host} ${var.iscsi_port} ${var.iqn} ${var.lvm_pool} ${var.lvm_name} ${var.lvm_size}"
-  destroy_string = "${var.iscsi_host} ${var.iscsi_port} ${var.iqn} ${var.lvm_pool} ${var.lvm_name}"
+  script_path      = "/usr/local/bin"
+  script_name_stub = "pve-create-iscsi"
 }
 
-resource "null_resource" "cloudinit_iscsi_drive" {
+resource "null_resource" "cloudinit_iscsi_drive_create" {
   connection {
     type  = var.connection_type
     user  = var.connection_user
     host  = var.connection_host
     agent = true
-  }
-
-  provisioner "file" {
-    content     = "#!/bin/bash\ndeclare -a proxmox_nodes=(${var.proxmox_node_ips})"
-    destination = "/tmp/pve-nodes.sh"
   }
 
   provisioner "file" {
@@ -26,16 +21,13 @@ resource "null_resource" "cloudinit_iscsi_drive" {
       lvm_size      = var.lvm_size
       proxmox_nodes = var.proxmox_nodes
     })
-    destination = "/tmp/pve-create-iscsi.sh"
+    destination = "${local.script_path}/${local.script_name_stub}-${var.vmid}.sh"
   }
-
-
-
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /tmp/pve-create-iscsi.sh",
-      "/tmp/pve-create-iscsi.sh create ${local.create_string}",
+      "chmod +x ${local.script_path}/${local.script_name_stub}-${var.vmid}.sh",
+      "${local.script_path}/${local.script_name_stub}-${var.vmid}.sh create",
     ]
   }
 }
@@ -44,21 +36,12 @@ resource "null_resource" "cloudinit_iscsi_drive_destroy_only" {
   # dirty hack to work around destroy-time provisioners being
   # unable to access variables easily.
   triggers = {
-    destroy_string  = local.destroy_string
-    connection_type = var.connection_type
-    connection_user = var.connection_user
-    connection_host = var.connection_host
-  }
-
-  provisioner "file" {
-    connection {
-      type  = var.connection_type
-      user  = var.connection_user
-      host  = var.connection_host
-      agent = true
-    }
-    content     = "#!/bin/bash\ndeclare -a proxmox_nodes=(${var.proxmox_node_ips})"
-    destination = "/tmp/pve-nodes.sh"
+    connection_type  = var.connection_type
+    connection_user  = var.connection_user
+    connection_host  = var.connection_host
+    script_path      = local.script_path
+    script_name_stub = local.script_name_stub
+    vmid             = var.vmid
   }
 
   provisioner "remote-exec" {
@@ -70,8 +53,7 @@ resource "null_resource" "cloudinit_iscsi_drive_destroy_only" {
     }
     when = destroy
     inline = [
-      "chmod +x /tmp/pve-create-iscsi.sh",
-      "/tmp/pve-create-iscsi.sh destroy ${self.triggers.destroy_string}",
+      "${self.triggers.script_path}/${self.triggers.script_name_stub}-${self.triggers.vmid}.sh destroy",
     ]
   }
 }
