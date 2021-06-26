@@ -1,46 +1,6 @@
 #!/bin/bash -e
 
 ACTION="${1:-}"
-ISCSI_HOST="${2:-}"
-ISCSI_PORT="${3:-}"
-IQN="${4:-}"
-LVM_POOL="${5:-}"
-LVM_NAME="${6:-}"
-LVM_SIZE="${7:-}"
-
-USAGE="${0} create/destroy ISCSI_HOST ISCSI_PORT IQN LVM_POOL LVM_NAME SIZE"
-
-validate_vars() {
-    if [[ -z "${ISCSI_HOST}" ]]; then
-	echo "${USAGE}"
-	exit 1
-    fi
-
-    if [[ -z "${ISCSI_PORT}" ]]; then
-	echo "${USAGE}"
-	exit 1
-    fi
-
-    if [[ -z "${IQN}" ]]; then
-	echo "${USAGE}"
-	exit 1
-    fi
-
-    if [[ -z "${LVM_POOL}" ]]; then
-	echo "${USAGE}"
-	exit 1
-    fi
-
-    if [[ -z "${LVM_NAME}" ]]; then
-	echo "${USAGE}"
-	exit 1
-    fi
-
-    if [[ -z "${LVM_SIZE}" && "${ACTION}" == "create" ]]; then
-	echo "${USAGE}"
-	exit 1
-    fi
-}
 
 create_lvm() {
     # create lvm
@@ -126,8 +86,6 @@ reload_tgt() {
 }
 
 main() {
-    validate_vars
-
     VG_NAME=$(echo "${lvm_pool}" | cut -d '/' -f1)
 
     if [ "${ACTION}" == "create" ]; then
@@ -143,5 +101,6 @@ main() {
 	destroy_lvm
     fi
 }
+
 # run main function
 main
