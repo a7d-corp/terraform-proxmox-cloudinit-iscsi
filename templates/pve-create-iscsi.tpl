@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-ACTION="${1:-}"
+ACTION="$${1:-}"
 
 create_lvm() {
     # create lvm
@@ -12,9 +12,9 @@ create_lvm() {
 }
 
 destroy_lvm() {
-    echo "[INFO] running: lvremove -fy /dev/mapper/${VG_NAME}-${lvm_name}"
-    if ! lvremove -fy /dev/mapper/${VG_NAME}-${lvm_name}; then
-	echo "lvm volume '/dev/mapper/${VG_NAME}-${lvm_name}' not removed"
+    echo "[INFO] running: lvremove -fy /dev/mapper/$${VG_NAME}-${lvm_name}"
+    if ! lvremove -fy /dev/mapper/$${VG_NAME}-${lvm_name}; then
+	echo "lvm volume '/dev/mapper/$${VG_NAME}-${lvm_name}' not removed"
 	exit 1
     fi
 }
@@ -24,7 +24,7 @@ create_iscsi_target() {
     echo "[INFO] creating: /etc/tgt/conf.d/${lvm_name}.conf"
     cat > /etc/tgt/conf.d/${lvm_name}.conf <<EOF
 <target ${iqn}:${lvm_name}>
-	backing-store /dev/mapper/${VG_NAME}-${lvm_name}
+	backing-store /dev/mapper/$${VG_NAME}-${lvm_name}
 </target>
 EOF
 
@@ -49,10 +49,10 @@ disconnect_iscsi_clients() {
     declare -a proxmox_nodes=(%{for node in proxmox_nodes ~} "${node}" %{ endfor ~})
 
     # loop over all node IPs and disconnect from the iscsi target
-    for node in "${proxmox_nodes[@]}"; do
-	echo "[INFO] running: ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${lvm_name} -p ${iscsi_host}:${iscsi_port} -u"
-	if ! ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${lvm_name} -p ${iscsi_host}:${iscsi_port} -u; then
-	    echo "couldn't disconnect ${node} from ${iqn}:${lvm_name}"
+    for node in "$${proxmox_nodes[@]}"; do
+	echo "[INFO] running: ssh $${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${lvm_name} -p ${iscsi_host}:${iscsi_port} -u"
+	if ! ssh $${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${lvm_name} -p ${iscsi_host}:${iscsi_port} -u; then
+	    echo "couldn't disconnect $${node} from ${iqn}:${lvm_name}"
 	    exit 1
 	fi
     done
@@ -88,12 +88,12 @@ reload_tgt() {
 main() {
     VG_NAME=$(echo "${lvm_pool}" | cut -d '/' -f1)
 
-    if [ "${ACTION}" == "create" ]; then
+    if [ "$${ACTION}" == "create" ]; then
 	create_lvm
 	create_iscsi_target
 	reload_tgt
 	create_pve_storage
-    elif [ "${ACTION}" == "destroy" ]; then
+    elif [ "$${ACTION}" == "destroy" ]; then
 	destroy_pve_storage
 	disconnect_iscsi_clients
 	destroy_iscsi_target
