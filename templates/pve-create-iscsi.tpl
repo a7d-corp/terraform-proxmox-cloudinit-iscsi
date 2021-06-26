@@ -44,55 +44,55 @@ validate_vars() {
 
 create_lvm() {
     # create lvm
-    echo "[INFO] running: lvcreate -V ${LVM_SIZE} --thin -n ${LVM_NAME} ${LVM_POOL}"
-    if ! lvcreate -V ${LVM_SIZE} --thin -n ${LVM_NAME} ${LVM_POOL}; then
+    echo "[INFO] running: lvcreate -V ${lvm_size} --thin -n ${lvm_name} ${lvm_pool}"
+    if ! lvcreate -V ${lvm_size} --thin -n ${lvm_name} ${lvm_pool}; then
 	echo "lvm creation failed"
 	exit 1
     fi
 }
 
 destroy_lvm() {
-    echo "[INFO] running: lvremove -fy /dev/mapper/${VG_NAME}-${LVM_NAME}"
-    if ! lvremove -fy /dev/mapper/${VG_NAME}-${LVM_NAME}; then
-	echo "lvm volume '/dev/mapper/${VG_NAME}-${LVM_NAME}' not removed"
+    echo "[INFO] running: lvremove -fy /dev/mapper/${VG_NAME}-${lvm_name}"
+    if ! lvremove -fy /dev/mapper/${VG_NAME}-${lvm_name}; then
+	echo "lvm volume '/dev/mapper/${VG_NAME}-${lvm_name}' not removed"
 	exit 1
     fi
 }
 
 create_iscsi_target() {
     # create iscsi target definition
-    echo "[INFO] creating: /etc/tgt/conf.d/${LVM_NAME}.conf"
-    cat > /etc/tgt/conf.d/${LVM_NAME}.conf <<EOF
-<target ${IQN}:${LVM_NAME}>
-	backing-store /dev/mapper/${VG_NAME}-${LVM_NAME}
+    echo "[INFO] creating: /etc/tgt/conf.d/${lvm_name}.conf"
+    cat > /etc/tgt/conf.d/${lvm_name}.conf <<EOF
+<target ${iqn}:${lvm_name}>
+	backing-store /dev/mapper/${VG_NAME}-${lvm_name}
 </target>
 EOF
 
     # check if it was created successfully
-    if [[ ! -f /etc/tgt/conf.d/${LVM_NAME}.conf ]]; then
-	echo "iscsi target file '${LVM_NAME}.conf' was not created"
+    if [[ ! -f /etc/tgt/conf.d/${lvm_name}.conf ]]; then
+	echo "iscsi target file '${lvm_name}.conf' was not created"
 	exit 1
     fi
 }
 
 destroy_iscsi_target() {
     # remove iscsi target definition
-    echo "[INFO] running: rm -f /etc/tgt/conf.d/${LVM_NAME}.conf"
-    if ! rm -f /etc/tgt/conf.d/${LVM_NAME}.conf; then
-	echo "iscsi target file '${LVM_NAME}.conf' was not removed"
+    echo "[INFO] running: rm -f /etc/tgt/conf.d/${lvm_name}.conf"
+    if ! rm -f /etc/tgt/conf.d/${lvm_name}.conf; then
+	echo "iscsi target file '${lvm_name}.conf' was not removed"
 	exit 1
     fi
 }
 
 disconnect_iscsi_clients() {
-    # read in array of node IPs from external file
-    source /tmp/pve-nodes.sh
+    # create an array of proxmox node IPs
+    declare -a proxmox_nodes=(%{for node in proxmox_nodes ~} "${node}" %{ endfor ~})
 
     # loop over all node IPs and disconnect from the iscsi target
     for node in "${proxmox_nodes[@]}"; do
-	echo "[INFO] running: ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${IQN}:${LVM_NAME} -p ${ISCSI_HOST}:${ISCSI_PORT} -u"
-	if ! ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${IQN}:${LVM_NAME} -p ${ISCSI_HOST}:${ISCSI_PORT} -u; then
-	    echo "couldn't disconnect ${node} from ${IQN}:${LVM_NAME}"
+	echo "[INFO] running: ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${lvm_name} -p ${iscsi_host}:${iscsi_port} -u"
+	if ! ssh ${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${lvm_name} -p ${iscsi_host}:${iscsi_port} -u; then
+	    echo "couldn't disconnect ${node} from ${iqn}:${lvm_name}"
 	    exit 1
 	fi
     done
@@ -100,18 +100,18 @@ disconnect_iscsi_clients() {
 
 create_pve_storage() {
     # create storage in PVE
-    echo "[INFO] running: pvesm add iscsi ${LVM_NAME} -portal ${ISCSI_HOST}:${ISCSI_PORT} --target ${IQN}:${LVM_NAME}"
-    if ! pvesm add iscsi ${LVM_NAME} -portal ${ISCSI_HOST}:${ISCSI_PORT} --target ${IQN}:${LVM_NAME}; then
-	echo "couldn't add storage '${LVM_NAME}' to PVE"
+    echo "[INFO] running: pvesm add iscsi ${lvm_name} -portal ${iscsi_host}:${iscsi_port} --target ${iqn}:${lvm_name}"
+    if ! pvesm add iscsi ${lvm_name} -portal ${iscsi_host}:${iscsi_port} --target ${iqn}:${lvm_name}; then
+	echo "couldn't add storage '${lvm_name}' to PVE"
 	exit 1
     fi
 }
 
 destroy_pve_storage() {
     # delete storage from PVE
-    echo "[INFO] running: pvesm remove ${LVM_NAME}"
-    if ! pvesm remove "${LVM_NAME}" ; then
-	echo "couldn't remove storage '${LVM_NAME}' from PVE"
+    echo "[INFO] running: pvesm remove ${lvm_name}"
+    if ! pvesm remove "${lvm_name}" ; then
+	echo "couldn't remove storage '${lvm_name}' from PVE"
 	exit 1
     fi
 }
@@ -128,7 +128,7 @@ reload_tgt() {
 main() {
     validate_vars
 
-    VG_NAME=$(echo "${LVM_POOL}" | cut -d '/' -f1)
+    VG_NAME=$(echo "${lvm_pool}" | cut -d '/' -f1)
 
     if [ "${ACTION}" == "create" ]; then
 	create_lvm
