@@ -25,9 +25,9 @@ variable "iscsi_port" {
   type        = number
 }
 
-variable "proxmox_node_ips" {
-  description = "Space-separated list of Proxmox host IPs in cluster."
-  type        = string
+variable "proxmox_nodes" {
+  description = "List of Proxmox host IPs in cluster."
+  type        = list(any)
 }
 
 variable "iqn" {
