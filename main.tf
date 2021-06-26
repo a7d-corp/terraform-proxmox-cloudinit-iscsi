@@ -17,9 +17,20 @@ resource "null_resource" "cloudinit_iscsi_drive" {
   }
 
   provisioner "file" {
-    source      = "${path.module}/files/pve-create-iscsi.sh"
+    content = templatefile("${path.module}/templates/pve-create-iscsi.tpl", {
+      iscsi_host    = var.iscsi_host
+      iscsi_port    = var.iscsi_port
+      iqn           = var.iqn
+      lvm_pool      = var.lvm_pool
+      lvm_name      = var.lvm_name
+      lvm_size      = var.lvm_size
+      proxmox_nodes = var.proxmox_nodes
+    })
     destination = "/tmp/pve-create-iscsi.sh"
   }
+
+
+
 
   provisioner "remote-exec" {
     inline = [
