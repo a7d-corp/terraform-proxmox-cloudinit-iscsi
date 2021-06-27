@@ -1,6 +1,7 @@
 locals {
   script_path      = "/usr/local/bin"
   script_name_stub = "pve-create-iscsi"
+  storage_name     = "cloudinit-${var.lvm_name}"
 }
 
 resource "null_resource" "cloudinit_iscsi_drive_create" {
@@ -20,6 +21,7 @@ resource "null_resource" "cloudinit_iscsi_drive_create" {
       lvm_name      = var.lvm_name
       lvm_size      = var.lvm_size
       proxmox_nodes = var.proxmox_nodes
+      storage_name  = local.storage_name
     })
     destination = "${local.script_path}/${local.script_name_stub}-${var.vmid}.sh"
   }
