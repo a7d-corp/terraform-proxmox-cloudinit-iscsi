@@ -53,7 +53,7 @@ disconnect_iscsi_clients() {
 	echo "[INFO] running: ssh $${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${storage_name} -p ${iscsi_host}:${iscsi_port} -u"
 	if ! ssh $${node} -i ~/.ssh/id_iscsiadm iscsiadm -m node -T ${iqn}:${storage_name} -p ${iscsi_host}:${iscsi_port} -u; then
 	    echo "couldn't disconnect $${node} from ${iqn}:${storage_name}"
-	    exit 1
+	    return 0
 	fi
     done
 }
